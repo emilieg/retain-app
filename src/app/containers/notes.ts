@@ -1,4 +1,6 @@
-import {Component} from '@angular/core';
+import {Component, OnDestroy} from '@angular/core';
+import {NoteService} from '../services';
+import {Store} from '../store';
 
 @Component({
   selector: 'notes-container',
@@ -20,8 +22,8 @@ import {Component} from '@angular/core';
           <note-card
             class="col-xs-4"
             [note]="note"
-            *ngFor="let note of notes; let i = index"
-            (checked)="onNoteChecked(i)"
+            *ngFor="let note of notes"
+            (checked)="onNoteChecked($event)"
           >
           </note-card>
         </div>
@@ -30,30 +32,33 @@ import {Component} from '@angular/core';
   `
 })
 
-export class NotesContainer{
-  notes = [{
-    title: 'Eat', 
-    value: 'eat breakfast everyday',
-    color: 'lightblue'
-  },
-  {
-    title: 'Cook', 
-    value: 'cook dinner on Thursday',
-    color: 'lightgrey'
-  },
-  {
-    title: 'Clean', 
-    value: 'clean the kitchen',
-    color: 'gold'
-  }]
+export class NotesContainer implements OnDestroy{
+  notes = [];
+
+  constructor(private noteService: NoteService,
+    private store: Store) {
+
+    this.noteService.getNotes()
+    .subscribe();
+
+    this.store.changes
+    .map(data => data.notes)
+    .subscribe(notes => this.notes = notes)
+  }
+
+  ngOnDestroy(){
+    console.log('destroyed');
+  }
 
 //in html (checked) we listen for that event and pass on the current index
-  onNoteChecked(i: number){
-    this.notes.splice(i, 1);
+  onNoteChecked(note){
+    this.noteService.completeNote(note)
+      .subscribe()
   } 
 
   onCreateNote(note){
-    this.notes.push(note);
+    this.noteService.createNote(note)
+      .subscribe()
   }
 
 }
